@@ -1,4 +1,12 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+A project where I tried out a new React components library called [Mantine](https://mantine.dev/). In this project I've built a task management platform similar to [Asana](https://asana.com).
+
+## Features
+
+- Login with Google
+- Create, edit and remove tasks
+- Drag and drop to reorder tasks
+- Toggle between light and dark mode
+- Save user preferences
 
 ## Getting Started
 
