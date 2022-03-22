@@ -2,9 +2,10 @@ import Brand from "@components/Brand";
 import DragDrop from "@components/DragDrop";
 import Links from "@components/Links";
 import User from "@components/User";
-import { AppShell, Button, Grid, Group, Navbar } from "@mantine/core";
+import { AppShell, Grid, Group, Navbar } from "@mantine/core";
 import type { NextPage } from "next";
 import { uuid } from "uuidv4";
+import { firestore } from "@firebase/clientApp";
 
 const NavBar = () => {
   return (
