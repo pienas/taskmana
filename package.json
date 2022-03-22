@@ -19,6 +19,7 @@
     "@mantine/rte": "^4.0.7",
     "@mantine/spotlight": "^4.0.7",
     "dayjs": "^1.11.0",
+    "firebase": "^9.6.9",
     "next": "12.1.0",
     "react": "17.0.2",
     "react-beautiful-dnd": "^13.1.0",
