@@ -1,4 +1,4 @@
-A project where I tried out a new React components library called [Mantine](https://mantine.dev/). In this project I've built a task management platform similar to [Asana](https://asana.com).
+A project where I tried out a new React components library called [Mantine](https://mantine.dev/). In this project I've built a task management platform similar to [Asana](https://asana.com) using Next.js, SWR, Mantine, Firebase Firestore and react-trello.
 
 ## Features
 
