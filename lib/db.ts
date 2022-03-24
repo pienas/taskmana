@@ -5,8 +5,11 @@ import {
   DocumentData,
   getDoc,
   getDocs,
+  limit,
   query,
   setDoc,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 import firestore from "./firebase";
 
@@ -99,6 +102,72 @@ export async function moveTask(
       });
       await deleteDoc(oldTaskRef);
     } else console.error("Task does not exist");
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function moveColumn(
+  oldColumnPosition: number,
+  newColumnPosition: number
+) {
+  try {
+    const columnsRef = collection(firestore, "columns");
+    const oldColumnQuery = query(
+      columnsRef,
+      where("position", "==", oldColumnPosition),
+      limit(1)
+    );
+    const oldColumnSnapshot = await getDocs(oldColumnQuery);
+    oldColumnSnapshot.forEach(async (document) => {
+      const oldColumnId = document.id;
+      const oldColumnRef = doc(firestore, `columns/${oldColumnId}`);
+      await updateDoc(oldColumnRef, {
+        position: newColumnPosition,
+      });
+    });
+    if (Math.abs(oldColumnPosition - newColumnPosition) <= 1) {
+      const newColumnQuery = query(
+        columnsRef,
+        where("position", "==", newColumnPosition),
+        limit(1)
+      );
+      const newColumnSnapshot = await getDocs(newColumnQuery);
+      newColumnSnapshot.forEach(async (document) => {
+        const newColumnId = document.id;
+        const newColumnRef = doc(firestore, `columns/${newColumnId}`);
+        await updateDoc(newColumnRef, {
+          position: oldColumnPosition,
+        });
+      });
+    } else {
+      let tempColumnPosition = newColumnPosition;
+      for (
+        let i = 0;
+        i < Math.abs(oldColumnPosition - newColumnPosition);
+        i++
+      ) {
+        const newColumnQuery = query(
+          columnsRef,
+          where("position", "==", tempColumnPosition),
+          limit(1)
+        );
+        const newColumnSnapshot = await getDocs(newColumnQuery);
+        newColumnSnapshot.forEach(async (document) => {
+          const newColumnId = document.id;
+          const newColumnRef = doc(firestore, `columns/${newColumnId}`);
+          if (oldColumnPosition - newColumnPosition > 0) {
+            await updateDoc(newColumnRef, {
+              position: ++tempColumnPosition,
+            });
+          } else {
+            await updateDoc(newColumnRef, {
+              position: --tempColumnPosition,
+            });
+          }
+        });
+      }
+    }
   } catch (error) {
     return { error };
   }
