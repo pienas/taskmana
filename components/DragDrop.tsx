@@ -1,82 +1,194 @@
 import React, { useState } from "react";
 import {
   Button,
-  Checkbox,
-  createStyles,
-  Grid,
+  Card,
   Group,
   Modal,
   Text,
   Textarea,
   TextInput,
+  useMantineTheme,
 } from "@mantine/core";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { useNotifications } from "@mantine/notifications";
-import { Check, ExclamationMark } from "tabler-icons-react";
+import {
+  Check,
+  DotsVertical,
+  ExclamationMark,
+  Plus,
+  Trash,
+} from "tabler-icons-react";
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
-import { createTask, updateTaskIndex } from "@lib/db";
+import { createTask } from "@lib/db";
 import { v4 as uuid } from "uuid";
-import { useListState } from "@mantine/hooks";
+import Board from "react-trello";
 
 type Task = {
-  description: string;
-  name: string;
-  createdAt: number;
-  column: number;
-  index: number;
-  completed: boolean;
   id: string;
+  title: string;
+  description: string;
+  label: string;
 };
 
-const useStyles = createStyles((theme) => ({
-  item: {
-    ...theme.fn.focusStyles(),
-    display: "flex",
-    alignItems: "center",
-    borderRadius: theme.radius.md,
-    border: `1px solid ${
-      theme.colorScheme === "dark" ? theme.colors.dark[5] : theme.colors.gray[2]
-    }`,
-    padding: `${theme.spacing.sm}px ${theme.spacing.xl}px`,
-    backgroundColor:
-      theme.colorScheme === "dark" ? theme.colors.dark[5] : theme.white,
-    marginBottom: theme.spacing.sm,
-    height: "100px",
-  },
+type Column = {
+  id: string;
+  title: string;
+  label?: string;
+  cards?: Array<Task>;
+  position: number;
+};
 
-  itemDragging: {
-    boxShadow: theme.shadows.sm,
-  },
-}));
+const CustomCard = ({ title, description, onDelete }) => {
+  const theme = useMantineTheme();
+  const clickDelete = (e) => {
+    onDelete();
+    e.stopPropagation();
+  };
+  return (
+    <div
+      style={{
+        ...theme.fn.focusStyles(),
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        borderRadius: theme.radius.md,
+        border: `1px solid ${
+          theme.colorScheme === "dark"
+            ? theme.colors.dark[5]
+            : theme.colors.gray[2]
+        }`,
+        padding: `${theme.spacing.sm}px ${theme.spacing.xl}px`,
+        backgroundColor:
+          theme.colorScheme === "dark" ? theme.colors.dark[5] : theme.white,
+        marginBottom: theme.spacing.sm,
+        height: "100px",
+        width: "300px",
+        cursor: "grab",
+      }}
+    >
+      <Group position="apart">
+        <Text color={theme.colorScheme === "dark" ? theme.white : theme.black}>
+          {title}
+        </Text>
+        <Button
+          variant="subtle"
+          color="dark"
+          size="lg"
+          compact
+          radius="md"
+          p={0}
+          onClick={clickDelete}
+          styles={(theme) => ({
+            root: {
+              transition: "all .2s",
+              height: "24px",
+              "&:hover": {
+                backgroundColor:
+                  theme.colorScheme === "dark"
+                    ? theme.colors.dark[5]
+                    : theme.white,
+                color: theme.colorScheme === "dark" ? theme.white : theme.black,
+              },
+            },
+          })}
+        >
+          <Trash size={16} />
+        </Button>
+      </Group>
+      <Text
+        color="dimmed"
+        size="sm"
+        style={{
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {description}
+      </Text>
+    </div>
+  );
+};
 
-const DragDrop = () => {
-  const { classes, cx } = useStyles();
+const CustomLaneHeader = ({ title }) => {
+  return (
+    <Group position="apart" style={{ cursor: "grab" }}>
+      <Text weight={600}>{title}</Text>
+      <Group spacing="xs">
+        <Button
+          variant="subtle"
+          color="dark"
+          size="lg"
+          compact
+          radius="md"
+          p={0}
+          styles={(theme) => ({
+            root: {
+              transition: "all .2s",
+              "&:hover": {
+                backgroundColor:
+                  theme.colorScheme === "dark"
+                    ? theme.colors.dark[7]
+                    : theme.white,
+                color: theme.colorScheme === "dark" ? theme.white : theme.black,
+              },
+            },
+          })}
+        >
+          <Plus />
+        </Button>
+        <Button
+          variant="subtle"
+          color="dark"
+          size="lg"
+          compact
+          radius="md"
+          p={0}
+          styles={(theme) => ({
+            root: {
+              transition: "all .2s",
+              "&:hover": {
+                backgroundColor:
+                  theme.colorScheme === "dark"
+                    ? theme.colors.dark[7]
+                    : theme.white,
+                color: theme.colorScheme === "dark" ? theme.white : theme.black,
+              },
+            },
+          })}
+        >
+          <DotsVertical />
+        </Button>
+      </Group>
+    </Group>
+  );
+};
+
+const CustomLaneFooter = () => {
   const notifications = useNotifications();
-  const { data } = useSWR("/api/tasks", fetcher);
-  const [state, handlers] = useListState<Task>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [addTaskModalOpened, setAddTaskModalOpened] = useState(false);
-  const [taskName, setTaskName] = useState("");
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskLabel, setTaskLabel] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
-  const [activeColumn, setActiveColumn] = useState(0);
-  const [lastIndex, setLastIndex] = useState(0);
-  if (!data) return <>Loading...</>;
-  if (!tasks.length) {
-    new Promise((resolve) => {
-      resolve("Data passed");
-    }).then(() => {
-      setTasks(data.tasks);
-      handlers.setState(data.tasks);
-      setLastIndex(Math.max(...data.tasks.map((task: Task) => task.index), 0));
-    });
-  }
-  const columns = Math.max(...tasks.map((task: Task) => task.column), 0) + 1;
-  const addTask = async (name: string, description: string, column: number) => {
-    if (!name.length)
+  const [selectedColumn, setSelectedColumn] = useState("");
+  const addTask = async (
+    columnId: string,
+    title: string,
+    description: string,
+    label: string
+  ) => {
+    if (!title.length)
       return notifications.showNotification({
         title: "No name",
         message: "Please enter a task name",
+        color: "red",
+        icon: <ExclamationMark />,
+      });
+    if (!label.length)
+      return notifications.showNotification({
+        title: "No label",
+        message: "Please enter a task label",
         color: "red",
         icon: <ExclamationMark />,
       });
@@ -87,22 +199,15 @@ const DragDrop = () => {
         color: "red",
         icon: <ExclamationMark />,
       });
-    //   handlers.append({ id: uuid(), name, description, createdAt: Date.now() });
     const newTask: Task = {
-      name: taskName,
-      description: taskDescription,
-      index: lastIndex + 1,
-      column: column,
-      completed: false,
-      createdAt: Date.now(),
       id: uuid(),
+      title,
+      description,
+      label,
     };
-    await createTask(newTask);
-    setTasks([...tasks, newTask]);
-    setTaskName("");
+    setTaskTitle("");
     setTaskDescription("");
-    setActiveColumn(0);
-    setLastIndex(lastIndex + 1);
+    setSelectedColumn("");
     setAddTaskModalOpened(false);
     return notifications.showNotification({
       title: "Task added",
@@ -113,10 +218,123 @@ const DragDrop = () => {
   };
   return (
     <>
-      <Grid>
+      <Button
+        variant="subtle"
+        color="dark"
+        fullWidth
+        radius="md"
+        onClick={() => {
+          setAddTaskModalOpened(true);
+        }}
+        styles={(theme) => ({
+          root: {
+            transition: "all .2s",
+            "&:hover": {
+              backgroundColor:
+                theme.colorScheme === "dark"
+                  ? theme.fn.darken(theme.colors.dark[5], 0.05)
+                  : theme.fn.lighten(theme.colors.gray[1], 0.05),
+              color: theme.colorScheme === "dark" ? theme.white : theme.black,
+            },
+          },
+        })}
+      >
+        + Add task
+      </Button>
+      <Modal
+        opened={addTaskModalOpened}
+        onClose={() => setAddTaskModalOpened(false)}
+        title="Add task"
+        centered
+      >
+        <TextInput
+          placeholder="Enter a task name"
+          radius="md"
+          size="md"
+          variant="default"
+          value={taskTitle}
+          onChange={(e) => setTaskTitle(e.currentTarget.value)}
+          required
+          mb={8}
+        />
+        <TextInput
+          placeholder="Enter a task label"
+          radius="md"
+          size="md"
+          variant="default"
+          value={taskLabel}
+          onChange={(e) => setTaskLabel(e.currentTarget.value)}
+          required
+          mb={8}
+        />
+        <Textarea
+          placeholder="Add a description"
+          radius="md"
+          size="md"
+          variant="default"
+          value={taskDescription}
+          required
+          onChange={(e) => setTaskDescription(e.currentTarget.value)}
+        />
+        <Group position="right" mt="md">
+          <Button
+            variant="light"
+            onClick={() =>
+              addTask(selectedColumn, taskTitle, taskDescription, taskLabel)
+            }
+          >
+            Add
+          </Button>
+        </Group>
+      </Modal>
+    </>
+  );
+};
+
+const DragDrop = () => {
+  const theme = useMantineTheme();
+  const { data: originalColumns } = useSWR("/api/columns", fetcher);
+  const [columns, setColumns] = useState<Column[]>([]);
+  if (!originalColumns) return <>Loading...</>;
+  if (!columns.length) {
+    new Promise((resolve) => {
+      resolve("Data passed");
+    }).then(() => {
+      setColumns(
+        originalColumns.columns.sort(
+          (a: Column, b: Column) => a.position - b.position
+        )
+      );
+    });
+  }
+  const boardData = {
+    lanes: columns,
+  };
+  return (
+    <>
+      <Board
+        data={boardData}
+        draggable
+        collapsibleLanes
+        style={{
+          backgroundColor:
+            theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
+          color: theme.colorScheme === "dark" ? theme.white : theme.black,
+        }}
+        laneStyle={{
+          backgroundColor:
+            theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
+        }}
+        components={{
+          Card: CustomCard,
+          LaneHeader: CustomLaneHeader,
+          LaneFooter: CustomLaneFooter,
+        }}
+      />
+      {/* <Grid>
         {[...Array(columns)].map((_, idx: number) => (
-          <Grid.Col key={idx} span={3}>
-            <DragDropContext
+          <Grid.Col key={idx} span={3}> */}
+      {/* <DragDropContext
               onDragEnd={
                 async ({ destination, source }) => {
                   await updateTaskIndex(
@@ -194,8 +412,8 @@ const DragDrop = () => {
                   </div>
                 )}
               </Droppable>
-            </DragDropContext>
-            <Button
+            </DragDropContext> */}
+      {/* <Button
               variant="subtle"
               color="dark"
               fullWidth
@@ -219,44 +437,10 @@ const DragDrop = () => {
               })}
             >
               + Add task
-            </Button>
-          </Grid.Col>
+            </Button> */}
+      {/* </Grid.Col>
         ))}
-      </Grid>
-      <Modal
-        opened={addTaskModalOpened}
-        onClose={() => setAddTaskModalOpened(false)}
-        title="Add task"
-        centered
-      >
-        <TextInput
-          placeholder="Enter a task name"
-          radius="md"
-          size="md"
-          variant="default"
-          value={taskName}
-          onChange={(e) => setTaskName(e.currentTarget.value)}
-          required
-          mb={8}
-        />
-        <Textarea
-          placeholder="Add a description"
-          radius="md"
-          size="md"
-          variant="default"
-          value={taskDescription}
-          required
-          onChange={(e) => setTaskDescription(e.currentTarget.value)}
-        />
-        <Group position="right" mt="md">
-          <Button
-            variant="light"
-            onClick={() => addTask(taskName, taskDescription, activeColumn)}
-          >
-            Add
-          </Button>
-        </Group>
-      </Modal>
+      </Grid> */}
     </>
   );
 };
