@@ -17,7 +17,7 @@ import {
 } from "tabler-icons-react";
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
-import { createColumn, createTask, deleteTask } from "@lib/db";
+import { createColumn, createTask, deleteTask, moveTask } from "@lib/db";
 import Board from "react-trello";
 import { v4 as uuid } from "uuid";
 
@@ -352,6 +352,13 @@ const DragDrop = () => {
       icon: <Check />,
     });
   };
+  const onMoveCard = async (
+    fromColumnId: string,
+    toColumnId: string,
+    taskId: string
+  ) => {
+    await moveTask(fromColumnId, toColumnId, taskId);
+  };
   const onNewColumn = async (column: Column) => {
     await createColumn(column);
     return notifications.showNotification({
@@ -388,6 +395,7 @@ const DragDrop = () => {
         onCardAdd={onNewCard}
         onCardDelete={onDeleteCard}
         onLaneAdd={onNewColumn}
+        onCardMoveAcrossLanes={onMoveCard}
       />
     </>
   );

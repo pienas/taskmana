@@ -3,6 +3,7 @@ import {
   deleteDoc,
   doc,
   DocumentData,
+  getDoc,
   getDocs,
   query,
   setDoc,
@@ -77,6 +78,27 @@ export async function deleteTask(columnId: string, taskId: string) {
   try {
     const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, taskId);
     await deleteDoc(tasksDoc);
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function moveTask(
+  oldColumnId: string,
+  newColumnId: string,
+  taskId: string
+) {
+  try {
+    const oldTaskRef = doc(firestore, `columns/${oldColumnId}/tasks`, taskId);
+    const newTaskRef = doc(firestore, `columns/${newColumnId}/tasks`, taskId);
+    const taskSnapshot = await getDoc(oldTaskRef);
+    if (taskSnapshot.exists()) {
+      await setDoc(newTaskRef, {
+        title: taskSnapshot.data().title,
+        description: taskSnapshot.data().description,
+      });
+      await deleteDoc(oldTaskRef);
+    } else console.error("Task does not exist");
   } catch (error) {
     return { error };
   }
