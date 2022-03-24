@@ -1,10 +1,11 @@
 import {
   collection,
+  deleteDoc,
   doc,
   DocumentData,
   getDocs,
   query,
-  updateDoc,
+  setDoc,
 } from "firebase/firestore";
 import firestore from "./firebase";
 
@@ -12,7 +13,12 @@ type Task = {
   id: string;
   description: string;
   title: string;
-  label: string;
+};
+
+type Column = {
+  id: string;
+  title: string;
+  position: number;
 };
 
 export async function getColumns() {
@@ -30,25 +36,47 @@ export async function getColumns() {
   }
 }
 
-export async function createTask(
-  columnId: string,
-  tasks: Task[],
-  { id, title, description, label }: Task
-) {
+export async function createColumn(newColumn: Column) {
   try {
-    const tasksDoc = doc(firestore, `columns/${columnId}`);
-    const tasksData = [
-      ...tasks,
-      {
-        id,
-        title,
-        description,
-        label,
-      },
-    ];
-    await updateDoc(tasksDoc, {
-      cards: tasksData,
+    const tasksDoc = doc(firestore, "columns", newColumn.id);
+    await setDoc(tasksDoc, {
+      title: newColumn.title,
+      position: newColumn.position,
     });
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function getTasks(columnId) {
+  try {
+    const tasksCollection = collection(firestore, `columns/${columnId}/tasks`);
+    const tasksQuery = query(tasksCollection);
+    const tasksSnapshot = await getDocs(tasksQuery);
+    const tasks: DocumentData[] = [];
+    tasksSnapshot.forEach((doc) => tasks.push({ ...doc.data(), id: doc.id }));
+    return { tasks };
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function createTask(columnId: string, newTask: Task) {
+  try {
+    const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, newTask.id);
+    await setDoc(tasksDoc, {
+      title: newTask.title,
+      description: newTask.description,
+    });
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function deleteTask(columnId: string, taskId: string) {
+  try {
+    const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, taskId);
+    await deleteDoc(tasksDoc);
   } catch (error) {
     return { error };
   }

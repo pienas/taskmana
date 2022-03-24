@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import {
   Button,
-  Card,
   Group,
-  Modal,
   Text,
   Textarea,
   TextInput,
@@ -19,21 +17,19 @@ import {
 } from "tabler-icons-react";
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
-import { createTask } from "@lib/db";
-import { v4 as uuid } from "uuid";
+import { createColumn, createTask, deleteTask } from "@lib/db";
 import Board from "react-trello";
+import { v4 as uuid } from "uuid";
 
 type Task = {
   id: string;
   title: string;
   description: string;
-  label: string;
 };
 
 type Column = {
   id: string;
   title: string;
-  label?: string;
   cards?: Array<Task>;
   position: number;
 };
@@ -165,134 +161,162 @@ const CustomLaneHeader = ({ title }) => {
   );
 };
 
-const CustomLaneFooter = () => {
+const CustomAddCardLink = ({ onClick }) => {
+  return (
+    <Button
+      variant="subtle"
+      color="dark"
+      fullWidth
+      radius="md"
+      onClick={() => {
+        onClick();
+      }}
+      styles={(theme) => ({
+        root: {
+          transition: "all .2s",
+          "&:hover": {
+            backgroundColor:
+              theme.colorScheme === "dark"
+                ? theme.fn.darken(theme.colors.dark[5], 0.05)
+                : theme.fn.lighten(theme.colors.gray[1], 0.05),
+            color: theme.colorScheme === "dark" ? theme.white : theme.black,
+          },
+        },
+      })}
+    >
+      + Add task
+    </Button>
+  );
+};
+
+const CustomNewLaneSection = ({ onClick }) => {
+  return (
+    <Button
+      variant="subtle"
+      color="dark"
+      fullWidth
+      size="lg"
+      radius="md"
+      onClick={() => {
+        onClick();
+      }}
+      styles={(theme) => ({
+        root: {
+          transition: "all .2s",
+          "&:hover": {
+            backgroundColor:
+              theme.colorScheme === "dark"
+                ? theme.fn.darken(theme.colors.dark[5], 0.05)
+                : theme.fn.lighten(theme.colors.gray[1], 0.05),
+            color: theme.colorScheme === "dark" ? theme.white : theme.black,
+          },
+        },
+      })}
+    >
+      + Add column
+    </Button>
+  );
+};
+
+const CustomNewCardForm = ({ onCancel, onAdd }) => {
   const notifications = useNotifications();
-  const [addTaskModalOpened, setAddTaskModalOpened] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
-  const [taskLabel, setTaskLabel] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
-  const [selectedColumn, setSelectedColumn] = useState("");
-  const addTask = async (
-    columnId: string,
-    title: string,
-    description: string,
-    label: string
-  ) => {
-    if (!title.length)
+  const handleAdd = () => {
+    if (!taskTitle.length)
       return notifications.showNotification({
         title: "No name",
         message: "Please enter a task name",
         color: "red",
         icon: <ExclamationMark />,
       });
-    if (!label.length)
-      return notifications.showNotification({
-        title: "No label",
-        message: "Please enter a task label",
-        color: "red",
-        icon: <ExclamationMark />,
-      });
-    if (!description.length)
+    if (!taskDescription.length)
       return notifications.showNotification({
         title: "No description",
         message: "Please enter a task description",
         color: "red",
         icon: <ExclamationMark />,
       });
-    const newTask: Task = {
-      id: uuid(),
-      title,
-      description,
-      label,
-    };
+    onAdd({ title: taskTitle, description: taskDescription });
     setTaskTitle("");
     setTaskDescription("");
-    setSelectedColumn("");
-    setAddTaskModalOpened(false);
-    return notifications.showNotification({
-      title: "Task added",
-      message: "Your new task was succesfully added",
-      color: "green",
-      icon: <Check />,
-    });
   };
   return (
     <>
-      <Button
-        variant="subtle"
-        color="dark"
-        fullWidth
+      <TextInput
+        placeholder="Enter a task name"
         radius="md"
-        onClick={() => {
-          setAddTaskModalOpened(true);
-        }}
-        styles={(theme) => ({
-          root: {
-            transition: "all .2s",
-            "&:hover": {
-              backgroundColor:
-                theme.colorScheme === "dark"
-                  ? theme.fn.darken(theme.colors.dark[5], 0.05)
-                  : theme.fn.lighten(theme.colors.gray[1], 0.05),
-              color: theme.colorScheme === "dark" ? theme.white : theme.black,
-            },
-          },
-        })}
-      >
-        + Add task
-      </Button>
-      <Modal
-        opened={addTaskModalOpened}
-        onClose={() => setAddTaskModalOpened(false)}
-        title="Add task"
-        centered
-      >
-        <TextInput
-          placeholder="Enter a task name"
-          radius="md"
-          size="md"
-          variant="default"
-          value={taskTitle}
-          onChange={(e) => setTaskTitle(e.currentTarget.value)}
-          required
-          mb={8}
-        />
-        <TextInput
-          placeholder="Enter a task label"
-          radius="md"
-          size="md"
-          variant="default"
-          value={taskLabel}
-          onChange={(e) => setTaskLabel(e.currentTarget.value)}
-          required
-          mb={8}
-        />
-        <Textarea
-          placeholder="Add a description"
-          radius="md"
-          size="md"
-          variant="default"
-          value={taskDescription}
-          required
-          onChange={(e) => setTaskDescription(e.currentTarget.value)}
-        />
-        <Group position="right" mt="md">
-          <Button
-            variant="light"
-            onClick={() =>
-              addTask(selectedColumn, taskTitle, taskDescription, taskLabel)
-            }
-          >
-            Add
-          </Button>
-        </Group>
-      </Modal>
+        size="md"
+        variant="default"
+        value={taskTitle}
+        onChange={(e) => setTaskTitle(e.currentTarget.value)}
+        required
+        mb={8}
+      />
+      <Textarea
+        placeholder="Add a description"
+        radius="md"
+        size="md"
+        variant="default"
+        value={taskDescription}
+        required
+        onChange={(e) => setTaskDescription(e.currentTarget.value)}
+      />
+      <Group position="right" mt="md">
+        <Button variant="light" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button variant="light" onClick={handleAdd}>
+          Add
+        </Button>
+      </Group>
+    </>
+  );
+};
+
+const CustomNewLaneForm = ({ onCancel, onAdd }) => {
+  const notifications = useNotifications();
+  const [columnTitle, setColumnTitle] = useState("");
+  const handleAdd = () => {
+    if (!columnTitle.length)
+      return notifications.showNotification({
+        title: "No name",
+        message: "Please enter a task name",
+        color: "red",
+        icon: <ExclamationMark />,
+      });
+    const columnCount =
+      document.getElementsByClassName("react-trello-lane").length;
+    onAdd({ id: uuid(), title: columnTitle, position: columnCount });
+    setColumnTitle("");
+  };
+  return (
+    <>
+      <TextInput
+        placeholder="Enter a column title"
+        radius="md"
+        size="md"
+        variant="default"
+        value={columnTitle}
+        onChange={(e) => setColumnTitle(e.currentTarget.value)}
+        required
+        mb={8}
+      />
+      <Group position="right" mt="md">
+        <Button variant="light" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button variant="light" onClick={handleAdd}>
+          Add
+        </Button>
+      </Group>
     </>
   );
 };
 
 const DragDrop = () => {
   const theme = useMantineTheme();
+  const notifications = useNotifications();
   const { data: originalColumns } = useSWR("/api/columns", fetcher);
   const [columns, setColumns] = useState<Column[]>([]);
   if (!originalColumns) return <>Loading...</>;
@@ -310,12 +334,40 @@ const DragDrop = () => {
   const boardData = {
     lanes: columns,
   };
+  const onNewCard = async (card: Task, laneId: string) => {
+    await createTask(laneId, card);
+    return notifications.showNotification({
+      title: "Task added",
+      message: "Your new task was succesfully added",
+      color: "green",
+      icon: <Check />,
+    });
+  };
+  const onDeleteCard = async (cardId: string, laneId: string) => {
+    await deleteTask(laneId, cardId);
+    return notifications.showNotification({
+      title: "Task removed",
+      message: "Your task was succesfully removed",
+      color: "green",
+      icon: <Check />,
+    });
+  };
+  const onNewColumn = async (column: Column) => {
+    await createColumn(column);
+    return notifications.showNotification({
+      title: "Column added",
+      message: "Your new column was succesfully added",
+      color: "green",
+      icon: <Check />,
+    });
+  };
   return (
     <>
       <Board
         data={boardData}
         draggable
-        collapsibleLanes
+        editable
+        canAddLanes
         style={{
           backgroundColor:
             theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
@@ -326,121 +378,17 @@ const DragDrop = () => {
             theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
         }}
         components={{
+          AddCardLink: CustomAddCardLink,
           Card: CustomCard,
           LaneHeader: CustomLaneHeader,
-          LaneFooter: CustomLaneFooter,
+          NewCardForm: CustomNewCardForm,
+          NewLaneForm: CustomNewLaneForm,
+          NewLaneSection: CustomNewLaneSection,
         }}
+        onCardAdd={onNewCard}
+        onCardDelete={onDeleteCard}
+        onLaneAdd={onNewColumn}
       />
-      {/* <Grid>
-        {[...Array(columns)].map((_, idx: number) => (
-          <Grid.Col key={idx} span={3}> */}
-      {/* <DragDropContext
-              onDragEnd={
-                async ({ destination, source }) => {
-                  await updateTaskIndex(
-                    tasks.find(
-                      (task) =>
-                        task.index ===
-                        source.index +
-                          tasks.filter((task) => task.column !== idx).length
-                    )?.id || "",
-                    (destination?.index || 0) +
-                      tasks.filter((task) => task.column !== idx).length
-                  );
-                  await updateTaskIndex(
-                    tasks.find(
-                      (task) =>
-                        task.index ===
-                        (destination?.index || 0) +
-                          tasks.filter((task) => task.column !== idx).length
-                    )?.id || "",
-                    source.index +
-                      tasks.filter((task) => task.column !== idx).length
-                  );
-                  handlers.reorder({
-                    from: source.index,
-                    to: destination?.index || 0,
-                  });
-                  setTasks(state);
-                  console.log(state);
-                }
-                // console.log(source.index, destination?.index)
-              }
-            >
-              <Droppable droppableId="dnd-list" direction="vertical">
-                {(provided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef}>
-                    {state
-                      .filter((task: Task) => task.column === idx)
-                      //   .sort((a: Task, b: Task) => a.index - b.index)
-                      .map((task: Task, idx: number) => (
-                        <Draggable
-                          key={task.id}
-                          index={idx}
-                          draggableId={task.id}
-                        >
-                          {(provided, snapshot) => (
-                            <div
-                              className={cx(classes.item, {
-                                [classes.itemDragging]: snapshot.isDragging,
-                              })}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              ref={provided.innerRef}
-                            >
-                              <Checkbox color="blue" size="xs" mr={12} />
-                              <div>
-                                <Text>{task.name}</Text>
-                                <Text
-                                  color="dimmed"
-                                  size="sm"
-                                  style={{
-                                    display: "-webkit-box",
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: "vertical",
-                                    overflow: "hidden",
-                                  }}
-                                >
-                                  {task.description}
-                                </Text>
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext> */}
-      {/* <Button
-              variant="subtle"
-              color="dark"
-              fullWidth
-              radius="md"
-              onClick={() => {
-                setAddTaskModalOpened(true);
-                setActiveColumn(idx);
-              }}
-              styles={(theme) => ({
-                root: {
-                  transition: "all .2s",
-                  "&:hover": {
-                    backgroundColor:
-                      theme.colorScheme === "dark"
-                        ? theme.fn.darken(theme.colors.dark[5], 0.05)
-                        : theme.fn.lighten(theme.colors.gray[1], 0.05),
-                    color:
-                      theme.colorScheme === "dark" ? theme.white : theme.black,
-                  },
-                },
-              })}
-            >
-              + Add task
-            </Button> */}
-      {/* </Grid.Col>
-        ))}
-      </Grid> */}
     </>
   );
 };
