@@ -7,7 +7,7 @@ import type { NextPage } from "next";
 
 const NavBar = () => {
   return (
-    <Navbar width={{ base: 300 }} p="xs">
+    <Navbar width={{ base: 300 }} p="xs" fixed>
       <Navbar.Section mt="xs">
         <Brand />
       </Navbar.Section>
@@ -23,7 +23,7 @@ const NavBar = () => {
 
 const Home: NextPage = () => {
   return (
-    <AppShell navbar={<NavBar />}>
+    <AppShell navbar={<NavBar />} style={{ overflow: "hidden" }}>
       <DragDrop />
     </AppShell>
   );
