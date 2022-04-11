@@ -1,20 +1,7 @@
 import React, { useState } from "react";
-import {
-  Button,
-  Group,
-  Text,
-  Textarea,
-  TextInput,
-  useMantineTheme,
-} from "@mantine/core";
+import { useMantineTheme } from "@mantine/core";
 import { useNotifications } from "@mantine/notifications";
-import {
-  Check,
-  DotsVertical,
-  ExclamationMark,
-  Plus,
-  Trash,
-} from "tabler-icons-react";
+import { Check } from "tabler-icons-react";
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
 import {
@@ -25,7 +12,12 @@ import {
   moveTask,
 } from "@lib/db";
 import Board from "react-trello";
-import { v4 as uuid } from "uuid";
+import NewLaneForm from "./NewLaneForm";
+import NewCardForm from "./NewCardForm";
+import AddCardLink from "./AddCardLink";
+import Card from "./Card";
+import LaneHeader from "./LaneHeader";
+import NewLaneSection from "./NewLaneSection";
 
 type Task = {
   id: string;
@@ -38,286 +30,6 @@ type Column = {
   title: string;
   cards?: Array<Task>;
   position: number;
-};
-
-const CustomCard = ({ title, description, onDelete }) => {
-  const theme = useMantineTheme();
-  const clickDelete = (e) => {
-    onDelete();
-    e.stopPropagation();
-  };
-  return (
-    <div
-      style={{
-        ...theme.fn.focusStyles(),
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        borderRadius: theme.radius.md,
-        border: `1px solid ${
-          theme.colorScheme === "dark"
-            ? theme.colors.dark[5]
-            : theme.colors.gray[2]
-        }`,
-        padding: `${theme.spacing.sm}px ${theme.spacing.xl}px`,
-        backgroundColor:
-          theme.colorScheme === "dark" ? theme.colors.dark[5] : theme.white,
-        marginBottom: theme.spacing.sm,
-        height: "100px",
-        width: "300px",
-        cursor: "grab",
-      }}
-    >
-      <Group position="apart">
-        <Text color={theme.colorScheme === "dark" ? theme.white : theme.black}>
-          {title}
-        </Text>
-        <Button
-          variant="subtle"
-          color="dark"
-          size="lg"
-          compact
-          radius="md"
-          p={0}
-          onClick={clickDelete}
-          styles={(theme) => ({
-            root: {
-              transition: "all .2s",
-              height: "24px",
-              "&:hover": {
-                backgroundColor:
-                  theme.colorScheme === "dark"
-                    ? theme.colors.dark[5]
-                    : theme.white,
-                color: theme.colorScheme === "dark" ? theme.white : theme.black,
-              },
-            },
-          })}
-        >
-          <Trash size={16} />
-        </Button>
-      </Group>
-      <Text
-        color="dimmed"
-        size="sm"
-        style={{
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }}
-      >
-        {description}
-      </Text>
-    </div>
-  );
-};
-
-const CustomLaneHeader = ({ title }) => {
-  return (
-    <Group position="apart" style={{ cursor: "grab" }}>
-      <Text weight={600}>{title}</Text>
-      <Group spacing="xs">
-        <Button
-          variant="subtle"
-          color="dark"
-          size="lg"
-          compact
-          radius="md"
-          p={0}
-          styles={(theme) => ({
-            root: {
-              transition: "all .2s",
-              "&:hover": {
-                backgroundColor:
-                  theme.colorScheme === "dark"
-                    ? theme.colors.dark[7]
-                    : theme.white,
-                color: theme.colorScheme === "dark" ? theme.white : theme.black,
-              },
-            },
-          })}
-        >
-          <Plus />
-        </Button>
-        <Button
-          variant="subtle"
-          color="dark"
-          size="lg"
-          compact
-          radius="md"
-          p={0}
-          styles={(theme) => ({
-            root: {
-              transition: "all .2s",
-              "&:hover": {
-                backgroundColor:
-                  theme.colorScheme === "dark"
-                    ? theme.colors.dark[7]
-                    : theme.white,
-                color: theme.colorScheme === "dark" ? theme.white : theme.black,
-              },
-            },
-          })}
-        >
-          <DotsVertical />
-        </Button>
-      </Group>
-    </Group>
-  );
-};
-
-const CustomAddCardLink = ({ onClick }) => {
-  return (
-    <Button
-      variant="subtle"
-      color="dark"
-      fullWidth
-      radius="md"
-      onClick={() => {
-        onClick();
-      }}
-      styles={(theme) => ({
-        root: {
-          transition: "all .2s",
-          "&:hover": {
-            backgroundColor:
-              theme.colorScheme === "dark"
-                ? theme.fn.darken(theme.colors.dark[5], 0.05)
-                : theme.fn.lighten(theme.colors.gray[1], 0.05),
-            color: theme.colorScheme === "dark" ? theme.white : theme.black,
-          },
-        },
-      })}
-    >
-      + Add task
-    </Button>
-  );
-};
-
-const CustomNewLaneSection = ({ onClick }) => {
-  return (
-    <Button
-      variant="subtle"
-      color="dark"
-      fullWidth
-      size="lg"
-      radius="md"
-      onClick={() => {
-        onClick();
-      }}
-      styles={(theme) => ({
-        root: {
-          transition: "all .2s",
-          "&:hover": {
-            backgroundColor:
-              theme.colorScheme === "dark"
-                ? theme.fn.darken(theme.colors.dark[5], 0.05)
-                : theme.fn.lighten(theme.colors.gray[1], 0.05),
-            color: theme.colorScheme === "dark" ? theme.white : theme.black,
-          },
-        },
-      })}
-    >
-      + Add column
-    </Button>
-  );
-};
-
-const CustomNewCardForm = ({ onCancel, onAdd }) => {
-  const notifications = useNotifications();
-  const [taskTitle, setTaskTitle] = useState("");
-  const [taskDescription, setTaskDescription] = useState("");
-  const handleAdd = () => {
-    if (!taskTitle.length)
-      return notifications.showNotification({
-        title: "No name",
-        message: "Please enter a task name",
-        color: "red",
-        icon: <ExclamationMark />,
-      });
-    if (!taskDescription.length)
-      return notifications.showNotification({
-        title: "No description",
-        message: "Please enter a task description",
-        color: "red",
-        icon: <ExclamationMark />,
-      });
-    onAdd({ title: taskTitle, description: taskDescription });
-    setTaskTitle("");
-    setTaskDescription("");
-  };
-  return (
-    <>
-      <TextInput
-        placeholder="Enter a task name"
-        radius="md"
-        size="md"
-        variant="default"
-        value={taskTitle}
-        onChange={(e) => setTaskTitle(e.currentTarget.value)}
-        required
-        mb={8}
-      />
-      <Textarea
-        placeholder="Add a description"
-        radius="md"
-        size="md"
-        variant="default"
-        value={taskDescription}
-        required
-        onChange={(e) => setTaskDescription(e.currentTarget.value)}
-      />
-      <Group position="right" mt="md">
-        <Button variant="light" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button variant="light" onClick={handleAdd}>
-          Add
-        </Button>
-      </Group>
-    </>
-  );
-};
-
-const CustomNewLaneForm = ({ onCancel, onAdd }) => {
-  const notifications = useNotifications();
-  const [columnTitle, setColumnTitle] = useState("");
-  const handleAdd = () => {
-    if (!columnTitle.length)
-      return notifications.showNotification({
-        title: "No name",
-        message: "Please enter a task name",
-        color: "red",
-        icon: <ExclamationMark />,
-      });
-    const columnCount =
-      document.getElementsByClassName("react-trello-lane").length;
-    onAdd({ id: uuid(), title: columnTitle, position: columnCount });
-    setColumnTitle("");
-  };
-  return (
-    <>
-      <TextInput
-        placeholder="Enter a column title"
-        radius="md"
-        size="md"
-        variant="default"
-        value={columnTitle}
-        onChange={(e) => setColumnTitle(e.currentTarget.value)}
-        required
-        mb={8}
-      />
-      <Group position="right" mt="md">
-        <Button variant="light" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button variant="light" onClick={handleAdd}>
-          Add
-        </Button>
-      </Group>
-    </>
-  );
 };
 
 const DragDrop = () => {
@@ -377,6 +89,7 @@ const DragDrop = () => {
   const onMoveColumn = async (from: number, to: number) => {
     await moveColumn(from, to);
   };
+
   return (
     <>
       <Board
@@ -388,18 +101,20 @@ const DragDrop = () => {
           backgroundColor:
             theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
           color: theme.colorScheme === "dark" ? theme.white : theme.black,
+          height: "96.5vh",
+          marginLeft: "300px",
         }}
         laneStyle={{
           backgroundColor:
             theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
         }}
         components={{
-          AddCardLink: CustomAddCardLink,
-          Card: CustomCard,
-          LaneHeader: CustomLaneHeader,
-          NewCardForm: CustomNewCardForm,
-          NewLaneForm: CustomNewLaneForm,
-          NewLaneSection: CustomNewLaneSection,
+          AddCardLink: AddCardLink,
+          Card: Card,
+          LaneHeader: LaneHeader,
+          NewCardForm: NewCardForm,
+          NewLaneForm: NewLaneForm,
+          NewLaneSection: NewLaneSection,
         }}
         onCardAdd={onNewCard}
         onCardDelete={onDeleteCard}
