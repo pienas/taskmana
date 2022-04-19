@@ -14,7 +14,7 @@ export type Column = {
 };
 
 export type Link = {
-  icon: React.ReactNode;
   color: string;
   label: string;
+  link: string;
 };
