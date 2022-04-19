@@ -1,9 +1,13 @@
-import { Button, Group, Text } from "@mantine/core";
+import { Button, Grid, Group, Text } from "@mantine/core";
 import { DotsVertical, Plus } from "tabler-icons-react";
 
 const LaneHeader = ({ title }) => {
   return (
-    <Group position="apart" style={{ cursor: "grab", width: 300 }}>
+    <Grid
+      style={{ cursor: "grab", width: 300, marginLeft: 5 }}
+      align="center"
+      justify="space-between"
+    >
       <Text weight={600}>{title}</Text>
       <Group spacing="xs">
         <Button
@@ -51,7 +55,7 @@ const LaneHeader = ({ title }) => {
           <DotsVertical />
         </Button>
       </Group>
-    </Group>
+    </Grid>
   );
 };
 
