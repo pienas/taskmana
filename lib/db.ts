@@ -14,9 +14,54 @@ import {
 } from "firebase/firestore";
 import firestore from "./firebase";
 
-export async function getColumns() {
+export async function getProjects() {
   try {
-    const columnsCollection = collection(firestore, "columns");
+    const projectsCollection = collection(firestore, "projects");
+    const projectsQuery = query(projectsCollection);
+    const projectsSnapshot = await getDocs(projectsQuery);
+    const projects: DocumentData[] = [];
+    projectsSnapshot.forEach((doc) => {
+      projects.push(doc.data());
+    });
+    return { projects };
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function createProject(label: string, color: string) {
+  try {
+    const projectId = label.replace(/ /g, "").toLowerCase();
+    const projectDoc = doc(firestore, "projects", projectId);
+    await setDoc(projectDoc, {
+      label: label,
+      color: color,
+      link: projectId,
+    });
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function deleteProject(projectId: string) {
+  try {
+    const projectDoc = doc(
+      firestore,
+      "projects",
+      projectId.replace(/ /g, "").toLowerCase()
+    );
+    await deleteDoc(projectDoc);
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function getColumns(projectId: string) {
+  try {
+    const columnsCollection = collection(
+      firestore,
+      `projects/${projectId}/columns`
+    );
     const columnsQuery = query(columnsCollection);
     const columnsSnapshot = await getDocs(columnsQuery);
     const columns: DocumentData[] = [];
@@ -29,10 +74,15 @@ export async function getColumns() {
   }
 }
 
-export async function createColumn(newColumn: Column) {
+export async function createColumn(projectId: string, newColumn: Column) {
   try {
-    const tasksDoc = doc(firestore, "columns", newColumn.id);
-    await setDoc(tasksDoc, {
+    const columnDoc = doc(
+      firestore,
+      `projects/${projectId}/columns`,
+      newColumn.id
+    );
+    await setDoc(columnDoc, {
+      project: projectId,
       title: newColumn.title,
       position: newColumn.position,
       createdAt: new Date(),
@@ -42,27 +92,34 @@ export async function createColumn(newColumn: Column) {
   }
 }
 
-export async function updateColumnTitle(columnId: string, title: string) {
+export async function updateColumnTitle(
+  projectId: string,
+  columnId: string,
+  title: string
+) {
   try {
-    const columnDoc = doc(firestore, "columns", columnId);
+    const columnDoc = doc(firestore, `projects/${projectId}/columns`, columnId);
     await updateDoc(columnDoc, { title });
   } catch (error) {
     return { error };
   }
 }
 
-export async function deleteColumn(columnId: string) {
+export async function deleteColumn(projectId: string, columnId: string) {
   try {
-    const columnDoc = doc(firestore, "columns", columnId);
+    const columnDoc = doc(firestore, `projects/${projectId}/columns`, columnId);
     await deleteDoc(columnDoc);
   } catch (error) {
     return { error };
   }
 }
 
-export async function getTasks(columnId: string) {
+export async function getTasks(projectId: string, columnId: string) {
   try {
-    const tasksCollection = collection(firestore, `columns/${columnId}/tasks`);
+    const tasksCollection = collection(
+      firestore,
+      `projects/${projectId}/columns/${columnId}/tasks`
+    );
     const tasksQuery = query(tasksCollection);
     const tasksSnapshot = await getDocs(tasksQuery);
     const tasks: DocumentData[] = [];
@@ -73,30 +130,47 @@ export async function getTasks(columnId: string) {
   }
 }
 
-export async function createTask(columnId: string, newTask: Task) {
+export async function createTask(
+  projectId: string,
+  columnId: string,
+  newTask: Task
+) {
   try {
-    const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, newTask.id);
+    const tasksDoc = doc(
+      firestore,
+      `projects/${projectId}/columns/${columnId}/tasks`,
+      newTask.id
+    );
     await setDoc(tasksDoc, {
+      project: projectId,
       title: newTask.title,
       description: newTask.description,
       createdAt: new Date(),
-      dueDate: newTask.dueDate,
-      dueTime: newTask.dueTime,
+      dueDate: newTask.dueDate ?? 0,
+      dueTime: newTask.dueTime ?? 0,
     });
   } catch (error) {
     return { error };
   }
 }
 
-export async function updateTask(columnId: string, task: Task) {
+export async function updateTask(
+  projectId: string,
+  columnId: string,
+  task: Task
+) {
   try {
-    const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, task.id);
+    const tasksDoc = doc(
+      firestore,
+      `projects/${projectId}/columns/${columnId}/tasks`,
+      task.id
+    );
     await updateDoc(tasksDoc, {
       title: task.title,
       description: task.description,
       updatedAt: new Date(),
-      dueDate: task.dueDate,
-      dueTime: task.dueTime,
+      dueDate: task.dueDate ?? 0,
+      dueTime: task.dueTime ?? 0,
     });
   } catch (error) {
     return { error };
@@ -104,12 +178,17 @@ export async function updateTask(columnId: string, task: Task) {
 }
 
 export async function checkTask(
+  projectId: string,
   columnId: string,
   taskId: string,
   completed: boolean
 ) {
   try {
-    const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, taskId);
+    const tasksDoc = doc(
+      firestore,
+      `projects/${projectId}/columns/${columnId}/tasks`,
+      taskId
+    );
     await updateDoc(tasksDoc, {
       completed: completed,
       updatedAt: new Date(),
@@ -119,9 +198,17 @@ export async function checkTask(
   }
 }
 
-export async function deleteTask(columnId: string, taskId: string) {
+export async function deleteTask(
+  projectId: string,
+  columnId: string,
+  taskId: string
+) {
   try {
-    const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, taskId);
+    const tasksDoc = doc(
+      firestore,
+      `projects/${projectId}/columns/${columnId}/tasks`,
+      taskId
+    );
     await deleteDoc(tasksDoc);
   } catch (error) {
     return { error };
@@ -129,14 +216,23 @@ export async function deleteTask(columnId: string, taskId: string) {
 }
 
 export async function moveTask(
+  projectId: string,
   oldColumnId: string,
   newColumnId: string,
   taskId: string
 ) {
   try {
     if (oldColumnId !== newColumnId) {
-      const oldTaskRef = doc(firestore, `columns/${oldColumnId}/tasks`, taskId);
-      const newTaskRef = doc(firestore, `columns/${newColumnId}/tasks`, taskId);
+      const oldTaskRef = doc(
+        firestore,
+        `projects/${projectId}/columns/${oldColumnId}/tasks`,
+        taskId
+      );
+      const newTaskRef = doc(
+        firestore,
+        `projects/${projectId}/columns/${newColumnId}/tasks`,
+        taskId
+      );
       const taskSnapshot = await getDoc(oldTaskRef);
       if (taskSnapshot.exists()) {
         await deleteDoc(oldTaskRef);
@@ -155,11 +251,12 @@ export async function moveTask(
 }
 
 export async function moveColumn(
+  projectId: string,
   oldColumnPosition: number,
   newColumnPosition: number
 ) {
   try {
-    const columnsRef = collection(firestore, "columns");
+    const columnsRef = collection(firestore, `projects/${projectId}/columns`);
     const oldColumnQuery = query(
       columnsRef,
       where("position", "==", oldColumnPosition),
