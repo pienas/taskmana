@@ -11,7 +11,7 @@ const result = async (_: NextApiRequest, res: NextApiResponse) => {
           column.cards = tasks;
         })
       );
-    res.status(200).json({ columns });
+    res.status(200).json(columns);
   } catch (error) {
     res.status(500).json({ error });
   }

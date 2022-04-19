@@ -42,6 +42,15 @@ export async function createColumn(newColumn: Column) {
   }
 }
 
+export async function updateColumnTitle(columnId: string, title: string) {
+  try {
+    const columnDoc = doc(firestore, "columns", columnId);
+    await updateDoc(columnDoc, { title });
+  } catch (error) {
+    return { error };
+  }
+}
+
 export async function deleteColumn(columnId: string) {
   try {
     const columnDoc = doc(firestore, "columns", columnId);
@@ -49,44 +58,6 @@ export async function deleteColumn(columnId: string) {
   } catch (error) {
     return { error };
   }
-}
-
-export async function findColumnId(taskId: string) {
-  const columnsCollection = collection(firestore, "columns");
-  const columnsQuery = query(columnsCollection);
-  const columnsSnapshot = await getDocs(columnsQuery);
-  const columns: DocumentData[] = [];
-  columnsSnapshot.forEach((doc) => columns.push({ ...doc.data(), id: doc.id }));
-  for (const columnDoc of columns) {
-    const tasksCollection = collection(
-      firestore,
-      `columns/${columnDoc.id}/tasks`
-    );
-    const tasksQuery = query(tasksCollection);
-    const tasksSnapshot = await getDocs(tasksQuery);
-    const tasks: DocumentData[] = [];
-    tasksSnapshot.forEach((doc) => tasks.push({ ...doc.data(), id: doc.id }));
-    for (const taskDoc of tasks) {
-      if (taskDoc.id === taskId) {
-        return columnDoc.id;
-      }
-    }
-  }
-  return "Column not found";
-}
-
-export async function findColumnIdByName(columnName: string) {
-  const columnsCollection = collection(firestore, "columns");
-  const columnsQuery = query(columnsCollection);
-  const columnsSnapshot = await getDocs(columnsQuery);
-  const columns: DocumentData[] = [];
-  columnsSnapshot.forEach((doc) => columns.push({ ...doc.data(), id: doc.id }));
-  for (const columnDoc of columns) {
-    if (columnDoc.title === columnName) {
-      return columnDoc.id;
-    }
-  }
-  return "Column not found";
 }
 
 export async function getTasks(columnId: string) {
@@ -102,20 +73,6 @@ export async function getTasks(columnId: string) {
   }
 }
 
-export async function getTask(columnId: string, taskId: string) {
-  try {
-    const taskDoc = doc(firestore, `columns/${columnId}/tasks/${taskId}`);
-    const taskSnapshot = await getDoc(taskDoc);
-    if (taskSnapshot.exists()) {
-      const task: DocumentData = taskSnapshot.data();
-      return { task };
-    }
-    return { error: "Task not found" };
-  } catch (error) {
-    return { error };
-  }
-}
-
 export async function createTask(columnId: string, newTask: Task) {
   try {
     const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, newTask.id);
@@ -123,8 +80,8 @@ export async function createTask(columnId: string, newTask: Task) {
       title: newTask.title,
       description: newTask.description,
       createdAt: new Date(),
-      dueDate: newTask.date ?? null,
-      dueTime: newTask.time ?? null,
+      dueDate: newTask.dueDate,
+      dueTime: newTask.dueTime,
     });
   } catch (error) {
     return { error };
@@ -138,8 +95,8 @@ export async function updateTask(columnId: string, task: Task) {
       title: task.title,
       description: task.description,
       updatedAt: new Date(),
-      dueDate: task.date ?? null,
-      dueTime: task.time ?? null,
+      dueDate: task.dueDate,
+      dueTime: task.dueTime,
     });
   } catch (error) {
     return { error };
