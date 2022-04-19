@@ -2,8 +2,8 @@ export type Task = {
   id: string;
   description: string;
   title: string;
-  date?: Date | null;
-  time?: Date | null;
+  dueDate?: number;
+  dueTime?: number;
 };
 
 export type Column = {
