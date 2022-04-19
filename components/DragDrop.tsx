@@ -15,7 +15,6 @@ import {
   createColumn,
   createTask,
   deleteTask,
-  getTask,
   moveColumn,
   moveTask,
   updateTask,
@@ -33,31 +32,26 @@ import { Column, Task } from "@utils/types";
 const DragDrop = () => {
   const theme = useMantineTheme();
   const notifications = useNotifications();
-  const { data: originalColumns } = useSWR("/api/columns", fetcher);
-  const [columns, setColumns] = useState<Column[]>([]);
+  const { data, error, mutate } = useSWR("/api/columns", fetcher);
   const [opened, setOpened] = useState(false);
   const [taskState, setTaskState] = useState<Task>({
     id: "",
     title: "",
     description: "",
-    date: null,
-    time: null,
+    dueDate: undefined,
+    dueTime: undefined,
   });
   const [columnId, setColumnId] = useState("");
-  if (!originalColumns) return <>Loading...</>;
-  if (!columns.length) {
-    new Promise((resolve) => {
-      resolve("Data passed");
-    }).then(() => {
-      setColumns(
-        originalColumns.columns.sort(
-          (a: Column, b: Column) => a.position - b.position
-        )
-      );
-    });
-  }
+  if (error)
+    return (
+      <>
+        Failed to load
+        <div>{error}</div>
+      </>
+    );
+  if (!data) return <>Loading...</>;
   const boardData = {
-    lanes: columns,
+    lanes: data.sort((a: Column, b: Column) => a.position - b.position),
   };
   const onNewCard = async (card: Task, laneId: string) => {
     await createTask(laneId, card);
@@ -84,13 +78,14 @@ const DragDrop = () => {
         icon: <ExclamationMark />,
       });
     await updateTask(columnId, taskState);
+    mutate();
     setOpened(false);
     setTaskState({
       id: "",
       title: "",
       description: "",
-      date: null,
-      time: null,
+      dueDate: undefined,
+      dueTime: undefined,
     });
     setColumnId("");
     return notifications.showNotification({
@@ -209,7 +204,9 @@ const DragDrop = () => {
               placeholder="Pick due date"
               inputFormat="YYYY-MM-DD"
               labelFormat="MMMM, YYYY"
-              value={taskState.date}
+              value={
+                taskState.dueDate ? new Date(taskState.dueDate) : undefined
+              }
               sx={() => ({
                 input: {
                   fontSize: "1rem",
@@ -225,7 +222,9 @@ const DragDrop = () => {
                   fontSize: "0.8rem",
                 },
               })}
-              onChange={(e) => setTaskState({ ...taskState, date: e })}
+              onChange={(e) =>
+                setTaskState({ ...taskState, dueDate: e?.getTime() })
+              }
               clearable={false}
               mb={8}
             />
@@ -234,7 +233,9 @@ const DragDrop = () => {
               radius="md"
               size="md"
               label="Due time"
-              value={taskState.time}
+              value={
+                taskState.dueTime ? new Date(taskState.dueTime) : undefined
+              }
               sx={() => ({
                 ".mantine-TimeInput-input": {
                   fontSize: "1rem",
@@ -250,7 +251,9 @@ const DragDrop = () => {
                   fontSize: "0.8rem",
                 },
               })}
-              onChange={(e) => setTaskState({ ...taskState, time: e })}
+              onChange={(e) =>
+                setTaskState({ ...taskState, dueTime: e.getTime() })
+              }
             />
           </Stack>
           <Button variant="light" onClick={updateTaskConfirm}>
@@ -283,16 +286,23 @@ const DragDrop = () => {
           NewLaneSection: NewLaneSection,
         }}
         onCardAdd={onNewCard}
-        onCardClick={async (taskId, _, columnId) => {
-          const { task } = await getTask(columnId, taskId);
-          console.log(task?.date, task?.time, task);
-          setTaskState({
-            id: taskId,
-            title: task?.title,
-            description: task?.description,
-            date: task?.date,
-            time: task?.time,
-          });
+        onCardClick={(taskId, _, columnId) => {
+          const column = data.find((column: Column) => column.id === columnId);
+          if (column) {
+            const cards = column.cards;
+            if (cards) {
+              const task = cards.find((card) => card.id === taskId);
+              if (task) {
+                setTaskState({
+                  id: taskId,
+                  title: task.title,
+                  description: task?.description,
+                  dueDate: task.dueDate,
+                  dueTime: task.dueTime,
+                });
+              }
+            }
+          }
           setColumnId(columnId);
           setOpened(true);
         }}

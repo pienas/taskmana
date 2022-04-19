@@ -1,29 +1,27 @@
-import { checkTask, findColumnId, getTask } from "@lib/db";
+import { checkTask } from "@lib/db";
 import { Button, Checkbox, Grid, Text, useMantineTheme } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { Trash } from "tabler-icons-react";
 
-const Card = ({ id, title, description, onClick, onDelete }) => {
-  const [columnId, setColumnId] = useState("");
+const Card = ({
+  id,
+  title,
+  description,
+  laneId,
+  completed,
+  onClick,
+  onDelete,
+}) => {
   const theme = useMantineTheme();
   const clickDelete = (e) => {
     onDelete();
     e.stopPropagation();
   };
-  const [checked, setChecked] = useState(false);
+  const [checked, setChecked] = useState(completed);
   const handleCheck = async () => {
-    await checkTask(columnId, id, !checked);
+    await checkTask(laneId, id, !checked);
     setChecked(!checked);
   };
-  useEffect(() => {
-    async function checkTask() {
-      const columnId = await findColumnId(id);
-      setColumnId(columnId);
-      const { task } = await getTask(columnId, id);
-      setChecked(task?.completed);
-    }
-    checkTask();
-  }, []);
   return (
     <>
       <div
