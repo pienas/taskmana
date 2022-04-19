@@ -1,15 +1,9 @@
 import React from "react";
 import { Group, Text, ThemeIcon, UnstyledButton } from "@mantine/core";
 import { ListCheck } from "tabler-icons-react";
+import { Link } from "@utils/types";
 
-type LinkProps = {
-  icon: React.ReactNode;
-  color: string;
-  label: string;
-};
-
-const Link = ({ icon, color, label }: LinkProps) => {
-
+const Link = ({ icon, color, label }: Link) => {
   return (
     <UnstyledButton
       sx={(theme) => ({

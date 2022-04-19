@@ -28,21 +28,7 @@ import Card from "./Card";
 import LaneHeader from "./LaneHeader";
 import NewLaneSection from "./NewLaneSection";
 import { DatePicker, TimeInput } from "@mantine/dates";
-
-type Task = {
-  id: string;
-  title: string;
-  description: string;
-  date: Date | null;
-  time: Date;
-};
-
-type Column = {
-  id: string;
-  title: string;
-  cards?: Array<Task>;
-  position: number;
-};
+import { Column, Task } from "@utils/types";
 
 const DragDrop = () => {
   const theme = useMantineTheme();
@@ -50,12 +36,14 @@ const DragDrop = () => {
   const { data: originalColumns } = useSWR("/api/columns", fetcher);
   const [columns, setColumns] = useState<Column[]>([]);
   const [opened, setOpened] = useState(false);
-  const [taskId, setTaskId] = useState("");
+  const [taskState, setTaskState] = useState<Task>({
+    id: "",
+    title: "",
+    description: "",
+    date: null,
+    time: null,
+  });
   const [columnId, setColumnId] = useState("");
-  const [taskTitle, setTaskTitle] = useState("");
-  const [taskDescription, setTaskDescription] = useState("");
-  const [taskDate, setTaskDate] = useState<Date | null>();
-  const [taskTime, setTaskTime] = useState<Date>();
   if (!originalColumns) return <>Loading...</>;
   if (!columns.length) {
     new Promise((resolve) => {
@@ -81,34 +69,30 @@ const DragDrop = () => {
     });
   };
   const updateTaskConfirm = async () => {
-    if (!taskTitle.length)
+    if (!taskState.title.length)
       return notifications.showNotification({
         title: "No name",
         message: "Please enter a task name",
         color: "red",
         icon: <ExclamationMark />,
       });
-    if (!taskDescription.length)
+    if (!taskState.description.length)
       return notifications.showNotification({
         title: "No description",
         message: "Please enter a task description",
         color: "red",
         icon: <ExclamationMark />,
       });
-    await updateTask(columnId, {
-      id: taskId,
-      title: taskTitle,
-      description: taskDescription,
-      date: taskDate,
-      time: taskTime,
-    });
+    await updateTask(columnId, taskState);
     setOpened(false);
-    setTaskId("");
+    setTaskState({
+      id: "",
+      title: "",
+      description: "",
+      date: null,
+      time: null,
+    });
     setColumnId("");
-    setTaskTitle("");
-    setTaskDescription("");
-    setTaskDate(null);
-    setTaskTime(undefined);
     return notifications.showNotification({
       title: "Task updated",
       message: "Your task was succesfully updated",
@@ -161,7 +145,7 @@ const DragDrop = () => {
               radius="md"
               size="md"
               variant="default"
-              value={taskTitle}
+              value={taskState.title}
               label="Task name"
               required
               sx={() => ({
@@ -179,14 +163,16 @@ const DragDrop = () => {
                   fontSize: "0.8rem",
                 },
               })}
-              onChange={(e) => setTaskTitle(e.currentTarget.value)}
+              onChange={(e) =>
+                setTaskState({ ...taskState, title: e.currentTarget.value })
+              }
             />
             <Textarea
               placeholder="Enter a task description"
               radius="md"
               size="md"
               variant="default"
-              value={taskDescription}
+              value={taskState.description}
               autosize
               label="Description"
               required
@@ -207,7 +193,12 @@ const DragDrop = () => {
                   fontSize: "0.8rem",
                 },
               })}
-              onChange={(e) => setTaskDescription(e.currentTarget.value)}
+              onChange={(e) =>
+                setTaskState({
+                  ...taskState,
+                  description: e.currentTarget.value,
+                })
+              }
             />
             <DatePicker
               allowFreeInput
@@ -218,7 +209,7 @@ const DragDrop = () => {
               placeholder="Pick due date"
               inputFormat="YYYY-MM-DD"
               labelFormat="MMMM, YYYY"
-              value={taskDate}
+              value={taskState.date}
               sx={() => ({
                 input: {
                   fontSize: "1rem",
@@ -234,7 +225,7 @@ const DragDrop = () => {
                   fontSize: "0.8rem",
                 },
               })}
-              onChange={(e) => setTaskDate(e)}
+              onChange={(e) => setTaskState({ ...taskState, date: e })}
               clearable={false}
               mb={8}
             />
@@ -243,7 +234,7 @@ const DragDrop = () => {
               radius="md"
               size="md"
               label="Due time"
-              value={taskTime}
+              value={taskState.time}
               sx={() => ({
                 ".mantine-TimeInput-input": {
                   fontSize: "1rem",
@@ -259,7 +250,7 @@ const DragDrop = () => {
                   fontSize: "0.8rem",
                 },
               })}
-              onChange={(e) => setTaskTime(e)}
+              onChange={(e) => setTaskState({ ...taskState, time: e })}
             />
           </Stack>
           <Button variant="light" onClick={updateTaskConfirm}>
@@ -294,12 +285,15 @@ const DragDrop = () => {
         onCardAdd={onNewCard}
         onCardClick={async (taskId, _, columnId) => {
           const { task } = await getTask(columnId, taskId);
-          setTaskId(taskId);
+          console.log(task?.date, task?.time, task);
+          setTaskState({
+            id: taskId,
+            title: task?.title,
+            description: task?.description,
+            date: task?.date,
+            time: task?.time,
+          });
           setColumnId(columnId);
-          setTaskTitle(task?.title);
-          setTaskDescription(task?.description);
-          setTaskDate(task?.date);
-          setTaskTime(task?.time);
           setOpened(true);
         }}
         onCardDelete={onDeleteCard}

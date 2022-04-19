@@ -1,3 +1,4 @@
+import { Column, Task } from "@utils/types";
 import {
   collection,
   deleteDoc,
@@ -12,20 +13,6 @@ import {
   where,
 } from "firebase/firestore";
 import firestore from "./firebase";
-
-type Task = {
-  id: string;
-  description: string;
-  title: string;
-  date?: Date | null;
-  time?: Date;
-};
-
-type Column = {
-  id: string;
-  title: string;
-  position: number;
-};
 
 export async function getColumns() {
   try {
@@ -55,6 +42,15 @@ export async function createColumn(newColumn: Column) {
   }
 }
 
+export async function deleteColumn(columnId: string) {
+  try {
+    const columnDoc = doc(firestore, "columns", columnId);
+    await deleteDoc(columnDoc);
+  } catch (error) {
+    return { error };
+  }
+}
+
 export async function findColumnId(taskId: string) {
   const columnsCollection = collection(firestore, "columns");
   const columnsQuery = query(columnsCollection);
@@ -74,6 +70,20 @@ export async function findColumnId(taskId: string) {
       if (taskDoc.id === taskId) {
         return columnDoc.id;
       }
+    }
+  }
+  return "Column not found";
+}
+
+export async function findColumnIdByName(columnName: string) {
+  const columnsCollection = collection(firestore, "columns");
+  const columnsQuery = query(columnsCollection);
+  const columnsSnapshot = await getDocs(columnsQuery);
+  const columns: DocumentData[] = [];
+  columnsSnapshot.forEach((doc) => columns.push({ ...doc.data(), id: doc.id }));
+  for (const columnDoc of columns) {
+    if (columnDoc.title === columnName) {
+      return columnDoc.id;
     }
   }
   return "Column not found";
