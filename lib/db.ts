@@ -17,6 +17,8 @@ type Task = {
   id: string;
   description: string;
   title: string;
+  date?: Date | null;
+  time?: Date;
 };
 
 type Column = {
@@ -46,13 +48,38 @@ export async function createColumn(newColumn: Column) {
     await setDoc(tasksDoc, {
       title: newColumn.title,
       position: newColumn.position,
+      createdAt: new Date(),
     });
   } catch (error) {
     return { error };
   }
 }
 
-export async function getTasks(columnId) {
+export async function findColumnId(taskId: string) {
+  const columnsCollection = collection(firestore, "columns");
+  const columnsQuery = query(columnsCollection);
+  const columnsSnapshot = await getDocs(columnsQuery);
+  const columns: DocumentData[] = [];
+  columnsSnapshot.forEach((doc) => columns.push({ ...doc.data(), id: doc.id }));
+  for (const columnDoc of columns) {
+    const tasksCollection = collection(
+      firestore,
+      `columns/${columnDoc.id}/tasks`
+    );
+    const tasksQuery = query(tasksCollection);
+    const tasksSnapshot = await getDocs(tasksQuery);
+    const tasks: DocumentData[] = [];
+    tasksSnapshot.forEach((doc) => tasks.push({ ...doc.data(), id: doc.id }));
+    for (const taskDoc of tasks) {
+      if (taskDoc.id === taskId) {
+        return columnDoc.id;
+      }
+    }
+  }
+  return "Column not found";
+}
+
+export async function getTasks(columnId: string) {
   try {
     const tasksCollection = collection(firestore, `columns/${columnId}/tasks`);
     const tasksQuery = query(tasksCollection);
@@ -65,12 +92,60 @@ export async function getTasks(columnId) {
   }
 }
 
+export async function getTask(columnId: string, taskId: string) {
+  try {
+    const taskDoc = doc(firestore, `columns/${columnId}/tasks/${taskId}`);
+    const taskSnapshot = await getDoc(taskDoc);
+    if (taskSnapshot.exists()) {
+      const task: DocumentData = taskSnapshot.data();
+      return { task };
+    }
+    return { error: "Task not found" };
+  } catch (error) {
+    return { error };
+  }
+}
+
 export async function createTask(columnId: string, newTask: Task) {
   try {
     const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, newTask.id);
     await setDoc(tasksDoc, {
       title: newTask.title,
       description: newTask.description,
+      createdAt: new Date(),
+      dueDate: newTask.date ?? null,
+      dueTime: newTask.time ?? null,
+    });
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function updateTask(columnId: string, task: Task) {
+  try {
+    const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, task.id);
+    await updateDoc(tasksDoc, {
+      title: task.title,
+      description: task.description,
+      updatedAt: new Date(),
+      dueDate: task.date ?? null,
+      dueTime: task.time ?? null,
+    });
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function checkTask(
+  columnId: string,
+  taskId: string,
+  completed: boolean
+) {
+  try {
+    const tasksDoc = doc(firestore, `columns/${columnId}/tasks`, taskId);
+    await updateDoc(tasksDoc, {
+      completed: completed,
+      updatedAt: new Date(),
     });
   } catch (error) {
     return { error };
@@ -101,6 +176,9 @@ export async function moveTask(
         await setDoc(newTaskRef, {
           title: taskSnapshot.data().title,
           description: taskSnapshot.data().description,
+          createdAt: taskSnapshot.data().createdAt,
+          updatedAt: taskSnapshot.data().updatedAt,
+          dueAt: taskSnapshot.data().dueAt,
         });
       } else console.error("Task does not exist");
     }
