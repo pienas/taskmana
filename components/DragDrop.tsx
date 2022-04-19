@@ -1,15 +1,24 @@
 import React, { useState } from "react";
-import { useMantineTheme } from "@mantine/core";
+import {
+  Button,
+  Drawer,
+  Stack,
+  Textarea,
+  TextInput,
+  useMantineTheme,
+} from "@mantine/core";
 import { useNotifications } from "@mantine/notifications";
-import { Check } from "tabler-icons-react";
+import { Check, ExclamationMark } from "tabler-icons-react";
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
 import {
   createColumn,
   createTask,
   deleteTask,
+  getTask,
   moveColumn,
   moveTask,
+  updateTask,
 } from "@lib/db";
 import Board from "react-trello";
 import NewLaneForm from "./NewLaneForm";
@@ -18,11 +27,14 @@ import AddCardLink from "./AddCardLink";
 import Card from "./Card";
 import LaneHeader from "./LaneHeader";
 import NewLaneSection from "./NewLaneSection";
+import { DatePicker, TimeInput } from "@mantine/dates";
 
 type Task = {
   id: string;
   title: string;
   description: string;
+  date: Date | null;
+  time: Date;
 };
 
 type Column = {
@@ -37,6 +49,13 @@ const DragDrop = () => {
   const notifications = useNotifications();
   const { data: originalColumns } = useSWR("/api/columns", fetcher);
   const [columns, setColumns] = useState<Column[]>([]);
+  const [opened, setOpened] = useState(false);
+  const [taskId, setTaskId] = useState("");
+  const [columnId, setColumnId] = useState("");
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskDate, setTaskDate] = useState<Date | null>();
+  const [taskTime, setTaskTime] = useState<Date>();
   if (!originalColumns) return <>Loading...</>;
   if (!columns.length) {
     new Promise((resolve) => {
@@ -57,6 +76,42 @@ const DragDrop = () => {
     return notifications.showNotification({
       title: "Task added",
       message: "Your new task was succesfully added",
+      color: "green",
+      icon: <Check />,
+    });
+  };
+  const updateTaskConfirm = async () => {
+    if (!taskTitle.length)
+      return notifications.showNotification({
+        title: "No name",
+        message: "Please enter a task name",
+        color: "red",
+        icon: <ExclamationMark />,
+      });
+    if (!taskDescription.length)
+      return notifications.showNotification({
+        title: "No description",
+        message: "Please enter a task description",
+        color: "red",
+        icon: <ExclamationMark />,
+      });
+    await updateTask(columnId, {
+      id: taskId,
+      title: taskTitle,
+      description: taskDescription,
+      date: taskDate,
+      time: taskTime,
+    });
+    setOpened(false);
+    setTaskId("");
+    setColumnId("");
+    setTaskTitle("");
+    setTaskDescription("");
+    setTaskDate(null);
+    setTaskTime(undefined);
+    return notifications.showNotification({
+      title: "Task updated",
+      message: "Your task was succesfully updated",
       color: "green",
       icon: <Check />,
     });
@@ -92,6 +147,126 @@ const DragDrop = () => {
 
   return (
     <>
+      <Drawer
+        opened={opened}
+        onClose={() => setOpened(false)}
+        padding="xl"
+        size="40%"
+        position="right"
+      >
+        <Stack justify="space-between" style={{ height: "95%" }}>
+          <Stack>
+            <TextInput
+              placeholder="Enter a task name"
+              radius="md"
+              size="md"
+              variant="default"
+              value={taskTitle}
+              label="Task name"
+              required
+              sx={() => ({
+                input: {
+                  fontSize: "1.3rem",
+                  color: theme.white,
+                  border: "1px solid #1a1b1e",
+                  backgroundColor: theme.colors.dark[7],
+                  "&:hover": { border: "1px solid #2c2e33" },
+                },
+                label: {
+                  marginLeft: "0.9rem",
+                  marginBottom: "0.5rem",
+                  fontWeight: "400",
+                  fontSize: "0.8rem",
+                },
+              })}
+              onChange={(e) => setTaskTitle(e.currentTarget.value)}
+            />
+            <Textarea
+              placeholder="Enter a task description"
+              radius="md"
+              size="md"
+              variant="default"
+              value={taskDescription}
+              autosize
+              label="Description"
+              required
+              sx={() => ({
+                textarea: {
+                  fontFamily: "monospace",
+                  fontSize: "1rem",
+                  lineHeight: "1.4rem",
+                  color: theme.white,
+                  border: "1px solid #1a1b1e",
+                  backgroundColor: theme.colors.dark[7],
+                  "&:hover": { border: "1px solid #2c2e33" },
+                },
+                label: {
+                  marginLeft: "0.9rem",
+                  marginBottom: "0.5rem",
+                  fontWeight: "400",
+                  fontSize: "0.8rem",
+                },
+              })}
+              onChange={(e) => setTaskDescription(e.currentTarget.value)}
+            />
+            <DatePicker
+              allowFreeInput
+              radius="md"
+              size="md"
+              variant="default"
+              label="Due date"
+              placeholder="Pick due date"
+              inputFormat="YYYY-MM-DD"
+              labelFormat="MMMM, YYYY"
+              value={taskDate}
+              sx={() => ({
+                input: {
+                  fontSize: "1rem",
+                  color: theme.white,
+                  border: "1px solid #1a1b1e",
+                  backgroundColor: theme.colors.dark[7],
+                  "&:hover": { border: "1px solid #2c2e33" },
+                },
+                label: {
+                  marginLeft: "0.9rem",
+                  marginBottom: "0.5rem",
+                  fontWeight: "400",
+                  fontSize: "0.8rem",
+                },
+              })}
+              onChange={(e) => setTaskDate(e)}
+              clearable={false}
+              mb={8}
+            />
+            <TimeInput
+              variant="default"
+              radius="md"
+              size="md"
+              label="Due time"
+              value={taskTime}
+              sx={() => ({
+                ".mantine-TimeInput-input": {
+                  fontSize: "1rem",
+                  color: theme.white,
+                  border: "1px solid #1a1b1e",
+                  backgroundColor: theme.colors.dark[7],
+                  "&:hover": { border: "1px solid #2c2e33" },
+                },
+                label: {
+                  marginLeft: "0.9rem",
+                  marginBottom: "0.5rem",
+                  fontWeight: "400",
+                  fontSize: "0.8rem",
+                },
+              })}
+              onChange={(e) => setTaskTime(e)}
+            />
+          </Stack>
+          <Button variant="light" onClick={updateTaskConfirm}>
+            Save
+          </Button>
+        </Stack>
+      </Drawer>
       <Board
         data={boardData}
         draggable
@@ -117,6 +292,16 @@ const DragDrop = () => {
           NewLaneSection: NewLaneSection,
         }}
         onCardAdd={onNewCard}
+        onCardClick={async (taskId, _, columnId) => {
+          const { task } = await getTask(columnId, taskId);
+          setTaskId(taskId);
+          setColumnId(columnId);
+          setTaskTitle(task?.title);
+          setTaskDescription(task?.description);
+          setTaskDate(task?.date);
+          setTaskTime(task?.time);
+          setOpened(true);
+        }}
         onCardDelete={onDeleteCard}
         onLaneAdd={onNewColumn}
         onCardMoveAcrossLanes={onMoveCard}
