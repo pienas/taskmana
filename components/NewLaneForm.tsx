@@ -1,4 +1,4 @@
-import { Button, Group, TextInput } from "@mantine/core";
+import { Box, Button, Group, TextInput } from "@mantine/core";
 import { useNotifications } from "@mantine/notifications";
 import { useState } from "react";
 import { ExclamationMark } from "tabler-icons-react";
@@ -21,7 +21,7 @@ const NewLaneForm = ({ onCancel, onAdd }) => {
     setColumnTitle("");
   };
   return (
-    <>
+    <Box style={{ width: 300 }}>
       <TextInput
         placeholder="Enter a column title"
         radius="md"
@@ -40,7 +40,7 @@ const NewLaneForm = ({ onCancel, onAdd }) => {
           Add
         </Button>
       </Group>
-    </>
+    </Box>
   );
 };
 
