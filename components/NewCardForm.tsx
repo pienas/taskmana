@@ -8,8 +8,8 @@ const NewCardForm = ({ onCancel, onAdd }) => {
   const notifications = useNotifications();
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
-  const [taskDate, setTaskDate] = useState<Date | null>();
-  const [taskTime, setTaskTime] = useState<Date>();
+  const [taskDate, setTaskDate] = useState<number>();
+  const [taskTime, setTaskTime] = useState<number>();
   const handleAdd = () => {
     if (!taskTitle.length)
       return notifications.showNotification({
@@ -28,12 +28,12 @@ const NewCardForm = ({ onCancel, onAdd }) => {
     onAdd({
       title: taskTitle,
       description: taskDescription,
-      date: taskDate,
-      time: taskTime,
+      dueDate: taskDate,
+      dueTime: taskTime,
     });
     setTaskTitle("");
     setTaskDescription("");
-    setTaskDate(null);
+    setTaskDate(undefined);
     setTaskTime(undefined);
   };
   return (
@@ -66,8 +66,8 @@ const NewCardForm = ({ onCancel, onAdd }) => {
         placeholder="Pick due date"
         inputFormat="YYYY-MM-DD"
         labelFormat="MMMM, YYYY"
-        value={taskDate}
-        onChange={(e) => setTaskDate(e)}
+        value={taskDate ? new Date(taskDate) : undefined}
+        onChange={(e) => setTaskDate(e?.getTime())}
         clearable={false}
         mb={8}
       />
@@ -75,8 +75,8 @@ const NewCardForm = ({ onCancel, onAdd }) => {
         variant="default"
         radius="md"
         size="md"
-        value={taskTime}
-        onChange={(e) => setTaskTime(e)}
+        value={taskTime ? new Date(taskTime) : undefined}
+        onChange={(e) => setTaskTime(e?.getTime())}
       />
       <Group position="right" mt="md">
         <Button variant="light" onClick={onCancel}>

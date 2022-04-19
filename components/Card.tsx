@@ -1,9 +1,10 @@
 import { checkTask } from "@lib/db";
 import { Button, Checkbox, Grid, Text, useMantineTheme } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trash } from "tabler-icons-react";
 
 const Card = ({
+  project,
   id,
   title,
   description,
@@ -19,7 +20,7 @@ const Card = ({
   };
   const [checked, setChecked] = useState(completed);
   const handleCheck = async () => {
-    await checkTask(laneId, id, !checked);
+    await checkTask(project, laneId, id, !checked);
     setChecked(!checked);
   };
   return (

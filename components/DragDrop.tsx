@@ -29,10 +29,10 @@ import NewLaneSection from "./NewLaneSection";
 import { DatePicker, TimeInput } from "@mantine/dates";
 import { Column, Task } from "@utils/types";
 
-const DragDrop = () => {
+const DragDrop = ({ projectId }) => {
   const theme = useMantineTheme();
   const notifications = useNotifications();
-  const { data, error, mutate } = useSWR("/api/columns", fetcher);
+  const { data, error, mutate } = useSWR(`/api/${projectId}/columns`, fetcher);
   const [opened, setOpened] = useState(false);
   const [taskState, setTaskState] = useState<Task>({
     id: "",
@@ -54,7 +54,7 @@ const DragDrop = () => {
     lanes: data.sort((a: Column, b: Column) => a.position - b.position),
   };
   const onNewCard = async (card: Task, laneId: string) => {
-    await createTask(laneId, card);
+    await createTask(projectId, laneId, card);
     return notifications.showNotification({
       title: "Task added",
       message: "Your new task was succesfully added",
@@ -77,7 +77,7 @@ const DragDrop = () => {
         color: "red",
         icon: <ExclamationMark />,
       });
-    await updateTask(columnId, taskState);
+    await updateTask(projectId, columnId, taskState);
     mutate();
     setOpened(false);
     setTaskState({
@@ -96,7 +96,7 @@ const DragDrop = () => {
     });
   };
   const onDeleteCard = async (cardId: string, laneId: string) => {
-    await deleteTask(laneId, cardId);
+    await deleteTask(projectId, laneId, cardId);
     return notifications.showNotification({
       title: "Task removed",
       message: "Your task was succesfully removed",
@@ -109,10 +109,10 @@ const DragDrop = () => {
     toColumnId: string,
     taskId: string
   ) => {
-    await moveTask(fromColumnId, toColumnId, taskId);
+    await moveTask(projectId, fromColumnId, toColumnId, taskId);
   };
   const onNewColumn = async (column: Column) => {
-    await createColumn(column);
+    await createColumn(projectId, column);
     return notifications.showNotification({
       title: "Column added",
       message: "Your new column was succesfully added",
@@ -121,7 +121,7 @@ const DragDrop = () => {
     });
   };
   const onMoveColumn = async (from: number, to: number) => {
-    await moveColumn(from, to);
+    await moveColumn(projectId, from, to);
   };
 
   return (

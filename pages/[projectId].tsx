@@ -2,8 +2,8 @@ import Brand from "@components/Brand";
 import DragDrop from "@components/DragDrop";
 import Projects from "@components/Projects";
 import User from "@components/User";
-import { AppShell, Navbar, Text } from "@mantine/core";
-import type { NextPage } from "next";
+import { AppShell, Navbar } from "@mantine/core";
+import { useRouter } from "next/router";
 
 const NavBar = () => {
   return (
@@ -21,12 +21,14 @@ const NavBar = () => {
   );
 };
 
-const Home: NextPage = () => {
+const ProjectPage = () => {
+  const router = useRouter();
+  const { projectId } = router.query;
   return (
     <AppShell navbar={<NavBar />} style={{ overflow: "hidden" }}>
-      <Text pl={300}>Select a project to view tasks</Text>
+      <DragDrop projectId={projectId} />
     </AppShell>
   );
 };
 
-export default Home;
+export default ProjectPage;
