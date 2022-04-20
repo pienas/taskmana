@@ -46,11 +46,12 @@ export async function verifyProjectOwner(
 
 export async function createProject(uid: string, label: string, color: string) {
   try {
-    await addDoc(collection(firestore, "projects"), {
+    const projectDoc = await addDoc(collection(firestore, "projects"), {
       user: uid,
       label: label,
       color: color,
     });
+    return projectDoc.id;
   } catch (error) {
     return { error };
   }

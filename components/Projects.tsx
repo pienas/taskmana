@@ -68,11 +68,12 @@ const Projects = () => {
         color: "red",
         icon: <ExclamationMark />,
       });
-    await createProject(uid, projectName, projectColor);
+    const projectId = await createProject(uid, projectName, projectColor);
     setOpened(false);
     setProjectName("");
     setProjectColor("");
     mutate();
+    router.replace(projectId as string);
     return notifications.showNotification({
       title: "Project created",
       message: "Your project was succesfully created",
