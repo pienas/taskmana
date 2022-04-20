@@ -1,5 +1,6 @@
 import { Column, Task } from "@utils/types";
 import {
+  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -21,7 +22,7 @@ export async function getProjects(uid: string) {
     const projectsSnapshot = await getDocs(projectsQuery);
     const projects: DocumentData[] = [];
     projectsSnapshot.forEach((doc) => {
-      projects.push(doc.data());
+      projects.push({ ...doc.data(), id: doc.id });
     });
     return { projects };
   } catch (error) {
@@ -45,13 +46,10 @@ export async function verifyProjectOwner(
 
 export async function createProject(uid: string, label: string, color: string) {
   try {
-    const projectId = label.replace(/ /g, "").toLowerCase();
-    const projectDoc = doc(firestore, "projects", projectId);
-    await setDoc(projectDoc, {
+    await addDoc(collection(firestore, "projects"), {
       user: uid,
       label: label,
       color: color,
-      link: projectId,
     });
   } catch (error) {
     return { error };
@@ -60,11 +58,7 @@ export async function createProject(uid: string, label: string, color: string) {
 
 export async function deleteProject(projectId: string) {
   try {
-    const projectDoc = doc(
-      firestore,
-      "projects",
-      projectId.replace(/ /g, "").toLowerCase()
-    );
+    const projectDoc = doc(firestore, "projects", projectId);
     await deleteDoc(projectDoc);
   } catch (error) {
     return { error };

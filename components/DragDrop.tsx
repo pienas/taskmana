@@ -33,7 +33,7 @@ import { DatePicker, TimeInput } from "@mantine/dates";
 import { Column, Task } from "@utils/types";
 import { useAuth } from "./AuthProvider";
 
-const DragDrop = ({ projectId }) => {
+const DragDrop = ({ projectId }: { projectId: string }) => {
   const theme = useMantineTheme();
   const notifications = useNotifications();
   const { token, uid } = useAuth();

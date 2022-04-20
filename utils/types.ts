@@ -1,9 +1,7 @@
-export interface Task {
+export interface Project {
   id: string;
-  description: string;
-  title: string;
-  dueDate?: number;
-  dueTime?: number;
+  label: string;
+  color: string;
 }
 
 export interface Column {
@@ -11,6 +9,14 @@ export interface Column {
   title: string;
   cards?: Array<Task>;
   position: number;
+}
+
+export interface Task {
+  id: string;
+  description: string;
+  title: string;
+  dueDate?: number;
+  dueTime?: number;
 }
 
 export interface Link {

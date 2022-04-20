@@ -20,6 +20,7 @@ import { createProject, deleteProject } from "@lib/db";
 import { useNotifications } from "@mantine/notifications";
 import { Check, ExclamationMark, Trash } from "tabler-icons-react";
 import { useAuth } from "./AuthProvider";
+import { Project } from "@utils/types";
 
 const Projects = () => {
   const { token, uid } = useAuth();
@@ -79,8 +80,8 @@ const Projects = () => {
       icon: <Check />,
     });
   };
-  const projectDelete = async (label: string) => {
-    await deleteProject(label);
+  const projectDelete = async (id: string) => {
+    await deleteProject(id);
     router.replace("/");
     setDeleteOpened(false);
     setTempLabel("");
@@ -94,9 +95,9 @@ const Projects = () => {
   };
   return (
     <>
-      {data.map((project) => (
-        <div key={project.label}>
-          <Link href={`/${project.link}`} passHref>
+      {data.map((project: Project) => (
+        <div key={project.id}>
+          <Link href={`/${project.id}`} passHref>
             <UnstyledButton
               sx={() => ({
                 display: "block",
@@ -109,7 +110,7 @@ const Projects = () => {
                     : theme.black,
                 transition: "all .2s",
                 backgroundColor:
-                  router.query.projectId === project.link
+                  router.query.projectId === project.id
                     ? theme.colorScheme === "dark"
                       ? theme.colors.dark[5]
                       : theme.colors.gray[0]
@@ -221,7 +222,7 @@ const Projects = () => {
                   color="red"
                   variant="light"
                   disabled={project.label !== tempLabel}
-                  onClick={() => projectDelete(project.label)}
+                  onClick={() => projectDelete(project.id)}
                   sx={{ transition: "all .4s" }}
                 >
                   Delete
