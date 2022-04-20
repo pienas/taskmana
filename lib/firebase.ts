@@ -1,5 +1,6 @@
 import { getApps, initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 if (!getApps().length)
   initializeApp({
@@ -9,5 +10,9 @@ if (!getApps().length)
   });
 
 const firestore = getFirestore();
+
+export const auth = getAuth();
+
+export const provider = new GoogleAuthProvider();
 
 export default firestore;

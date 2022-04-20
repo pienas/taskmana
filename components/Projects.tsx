@@ -19,9 +19,14 @@ import { useRouter } from "next/router";
 import { createProject, deleteProject } from "@lib/db";
 import { useNotifications } from "@mantine/notifications";
 import { Check, ExclamationMark, Trash } from "tabler-icons-react";
+import { useAuth } from "./AuthProvider";
 
 const Projects = () => {
-  const { data, error, mutate } = useSWR("/api/projects", fetcher);
+  const { token, uid } = useAuth();
+  const { data, error, mutate } = useSWR(
+    uid ? ["/api/projects", token] : null,
+    fetcher
+  );
   const [opened, setOpened] = useState(false);
   const [deleteOpened, setDeleteOpened] = useState(false);
   const [tempLabel, setTempLabel] = useState("");
@@ -62,7 +67,7 @@ const Projects = () => {
         color: "red",
         icon: <ExclamationMark />,
       });
-    await createProject(projectName, projectColor);
+    await createProject(uid, projectName, projectColor);
     setOpened(false);
     setProjectName("");
     setProjectColor("");

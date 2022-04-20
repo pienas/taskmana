@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import {
   Button,
+  Center,
   Drawer,
+  Loader,
   Stack,
+  Text,
   Textarea,
   TextInput,
   useMantineTheme,
@@ -28,11 +31,16 @@ import LaneHeader from "./LaneHeader";
 import NewLaneSection from "./NewLaneSection";
 import { DatePicker, TimeInput } from "@mantine/dates";
 import { Column, Task } from "@utils/types";
+import { useAuth } from "./AuthProvider";
 
 const DragDrop = ({ projectId }) => {
   const theme = useMantineTheme();
   const notifications = useNotifications();
-  const { data, error, mutate } = useSWR(`/api/${projectId}/columns`, fetcher);
+  const { token, uid } = useAuth();
+  const { data, error, mutate } = useSWR(
+    uid ? [`/api/${projectId}/columns`, token] : null,
+    fetcher
+  );
   const [opened, setOpened] = useState(false);
   const [taskState, setTaskState] = useState<Task>({
     id: "",
@@ -49,7 +57,13 @@ const DragDrop = ({ projectId }) => {
         <div>{error}</div>
       </>
     );
-  if (!data) return <>Loading...</>;
+  if (!data)
+    return (
+      <Center style={{ width: "100vw", height: "100vh" }}>
+        <Loader size="xl" variant="bars" />
+      </Center>
+    );
+  if (data.error) return <Text pl={300}>{data.error}</Text>;
   const boardData = {
     lanes: data.sort((a: Column, b: Column) => a.position - b.position),
   };

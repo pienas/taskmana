@@ -7,9 +7,11 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { ChevronRight } from "tabler-icons-react";
+import { useAuth } from "./AuthProvider";
 
 const User = () => {
   const theme = useMantineTheme();
+  const { displayName, email, photoURL } = useAuth();
   return (
     <Box
       sx={{
@@ -39,16 +41,13 @@ const User = () => {
         }}
       >
         <Group>
-          <Avatar
-            src="https://avatars.githubusercontent.com/u/46919012?v=4"
-            radius="xl"
-          />
+          <Avatar src={photoURL} radius="xl" />
           <Box sx={{ flex: 1 }}>
             <Text size="sm" weight={500}>
-              Karolis Urbaitis
+              {displayName}
             </Text>
             <Text color="dimmed" size="xs">
-              urbaitiskarolis1@gmail.com
+              {email}
             </Text>
           </Box>
           <ChevronRight size={18} />

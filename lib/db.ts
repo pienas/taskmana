@@ -14,10 +14,10 @@ import {
 } from "firebase/firestore";
 import firestore from "./firebase";
 
-export async function getProjects() {
+export async function getProjects(uid: string) {
   try {
     const projectsCollection = collection(firestore, "projects");
-    const projectsQuery = query(projectsCollection);
+    const projectsQuery = query(projectsCollection, where("user", "==", uid));
     const projectsSnapshot = await getDocs(projectsQuery);
     const projects: DocumentData[] = [];
     projectsSnapshot.forEach((doc) => {
@@ -29,11 +29,26 @@ export async function getProjects() {
   }
 }
 
-export async function createProject(label: string, color: string) {
+export async function verifyProjectOwner(
+  uid: string,
+  projectId: string
+): Promise<boolean> {
+  try {
+    const projectDoc = doc(firestore, `projects/${projectId}`);
+    const project = await getDoc(projectDoc);
+    if (project.data()?.user === uid) return true;
+    return false;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function createProject(uid: string, label: string, color: string) {
   try {
     const projectId = label.replace(/ /g, "").toLowerCase();
     const projectDoc = doc(firestore, "projects", projectId);
     await setDoc(projectDoc, {
+      user: uid,
       label: label,
       color: color,
       link: projectId,
