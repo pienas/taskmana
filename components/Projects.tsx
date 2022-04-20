@@ -1,6 +1,5 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
-  ActionIcon,
   Box,
   Button,
   ColorInput,
@@ -13,7 +12,6 @@ import {
   UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
-import { Link as LinkProps } from "@utils/types";
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
 import Link from "next/link";
@@ -172,11 +170,24 @@ const Projects = () => {
               Doing so will permanently delete the data at this project,
               including all nested columns, tasks, subtasks and comments.
             </Text>
-            <Box sx={{ backgroundColor: theme.colors.dark, padding: 20 }}>
+            <Box
+              sx={{
+                backgroundColor:
+                  theme.colorScheme === "dark"
+                    ? theme.colors.dark
+                    : theme.white,
+                padding: 20,
+                borderRadius: theme.radius.sm,
+              }}
+            >
               <Text color="dimmed" size="sm">
                 Project name:
               </Text>
-              <Text color="white" weight={600} mb={8}>
+              <Text
+                color={theme.colorScheme === "dark" ? theme.white : theme.black}
+                weight={600}
+                mb={8}
+              >
                 {project.label}
               </Text>
               <Text color="dimmed" size="sm" mb={8}>
@@ -194,7 +205,11 @@ const Projects = () => {
                 mb={8}
               />
               <Group position="right" mt="md">
-                <Button variant="subtle" onClick={closeDeleteModal}>
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  onClick={closeDeleteModal}
+                >
                   Cancel
                 </Button>
                 <Button

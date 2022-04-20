@@ -5,13 +5,11 @@ const AddCardLink = ({ onClick }) => {
     <Button
       variant="subtle"
       color="dark"
-      fullWidth
       radius="md"
-      onClick={() => {
-        onClick();
-      }}
+      onClick={onClick}
       styles={(theme) => ({
         root: {
+          width: "300px",
           transition: "all .2s",
           "&:hover": {
             backgroundColor:

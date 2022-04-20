@@ -1,4 +1,4 @@
-import { Button, Group, Textarea, TextInput } from "@mantine/core";
+import { Box, Button, Group, Textarea, TextInput } from "@mantine/core";
 import { DatePicker, TimeInput } from "@mantine/dates";
 import { useNotifications } from "@mantine/notifications";
 import { useState } from "react";
@@ -37,7 +37,7 @@ const NewCardForm = ({ onCancel, onAdd }) => {
     setTaskTime(undefined);
   };
   return (
-    <>
+    <Box style={{ width: 300 }}>
       <TextInput
         placeholder="Enter a task name"
         radius="md"
@@ -86,7 +86,7 @@ const NewCardForm = ({ onCancel, onAdd }) => {
           Add
         </Button>
       </Group>
-    </>
+    </Box>
   );
 };
 

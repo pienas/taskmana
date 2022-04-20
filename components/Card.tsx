@@ -90,7 +90,7 @@ const Card = ({
               radius="md"
               p={0}
               onClick={clickDelete}
-              styles={(theme) => ({
+              styles={() => ({
                 root: {
                   transition: "all .2s",
                   height: "24px",

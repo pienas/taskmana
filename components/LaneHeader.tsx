@@ -44,9 +44,6 @@ const LaneHeader = ({ project, id, title, onDelete }) => {
       icon: <Check />,
     });
   };
-  const cancel = () => {
-    setUpdatingTitle(false);
-  };
   const closeModal = () => {
     setOpened(false);
     setTempTitle("");
@@ -74,7 +71,8 @@ const LaneHeader = ({ project, id, title, onDelete }) => {
                   height: "25px",
                   minHeight: "25px",
                   fontWeight: 600,
-                  color: "white",
+                  color:
+                    theme.colorScheme === "dark" ? theme.white : theme.black,
                   fontSize: "16px",
                   padding: 0,
                   backgroundColor: "transparent",
@@ -90,7 +88,12 @@ const LaneHeader = ({ project, id, title, onDelete }) => {
             >
               <Check size={16} />
             </ActionIcon>
-            <ActionIcon variant="light" color="blue" size="sm" onClick={cancel}>
+            <ActionIcon
+              variant="light"
+              color="red"
+              size="sm"
+              onClick={() => setUpdatingTitle(false)}
+            >
               <X size={16} />
             </ActionIcon>
           </>
@@ -98,7 +101,7 @@ const LaneHeader = ({ project, id, title, onDelete }) => {
           <Text weight={600}>{columnTitle}</Text>
         )}
         <Menu
-          sx={(theme) => ({
+          sx={() => ({
             button: {
               transition: "all .2s",
               "&:hover": {
@@ -158,11 +161,22 @@ const LaneHeader = ({ project, id, title, onDelete }) => {
           Doing so will permanently delete the data at this column, including
           all nested tasks, subtasks and comments.
         </Text>
-        <Box sx={{ backgroundColor: theme.colors.dark, padding: 20 }}>
+        <Box
+          sx={{
+            backgroundColor:
+              theme.colorScheme === "dark" ? theme.colors.dark : theme.white,
+            padding: 20,
+            borderRadius: theme.radius.sm,
+          }}
+        >
           <Text color="dimmed" size="sm">
             Column title:
           </Text>
-          <Text color="white" weight={600} mb={8}>
+          <Text
+            color={theme.colorScheme === "dark" ? theme.white : theme.black}
+            weight={600}
+            mb={8}
+          >
             {columnTitle}
           </Text>
           <Text color="dimmed" size="sm" mb={8}>
@@ -179,7 +193,7 @@ const LaneHeader = ({ project, id, title, onDelete }) => {
             mb={8}
           />
           <Group position="right" mt="md">
-            <Button variant="subtle" onClick={closeModal}>
+            <Button variant="subtle" color="gray" onClick={closeModal}>
               Cancel
             </Button>
             <Button

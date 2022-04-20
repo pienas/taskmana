@@ -6,7 +6,7 @@ import {
   UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
-import { ChevronLeft, ChevronRight } from "tabler-icons-react";
+import { ChevronRight } from "tabler-icons-react";
 
 const User = () => {
   const theme = useMantineTheme();
