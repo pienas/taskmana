@@ -1,12 +1,16 @@
 A project where I tried out a new React components library called [Mantine](https://mantine.dev/). In this project I've built a task management platform similar to [Asana](https://asana.com) using Next.js, SWR, Mantine, Firebase Firestore and react-trello.
 
+[Demo](https://taskmana.vercel.app/)
+
 ## Features
 
 - Login with Google
 - Create, edit and remove tasks
-- Drag and drop to reorder tasks
+- Drag and drop to reorder tasks and columns
+- Create multiple projects
 - Toggle between light and dark mode
 - Save user preferences
+- Responsible (WIP)
 
 ## Getting Started
 
