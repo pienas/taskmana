@@ -9,7 +9,7 @@ const ProjectPage: NextPage = () => {
   const { projectId } = router.query;
   return (
     <AppShell navbar={<NavBar />} style={{ overflow: "hidden" }}>
-      <DragDrop projectId={projectId} />
+      <DragDrop projectId={projectId as string} />
     </AppShell>
   );
 };
